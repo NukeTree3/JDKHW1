@@ -4,34 +4,25 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
-public class Server extends JFrame {
+public class ServerGUI extends JFrame implements ServerView {
 
-    private static final Backup backup = new Backup("backup.txt");
+    private ServerController controller;
 
     private static final int WIDTH = 800;
     private static final int HEIGHT = 600;
 
-    private boolean started = false;
-
-    private static final String IP = "127.0.0.1";
-    private static final int PORT = 8080;
-
     private JTextArea statusArea;
     private JTextArea messageArea;
 
-    private ArrayList<UserMessage> userMessages;
-
-    public Server() {
-        setTitle("Server");
+    public ServerGUI() {
+        setTitle("ServerGUI");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(WIDTH, HEIGHT);
         setLocationRelativeTo(null);
 
         statusArea = new JTextArea();
         messageArea = new JTextArea();
-        userMessages = new ArrayList<>();
 
         setResizable(false);
 
@@ -39,7 +30,7 @@ public class Server extends JFrame {
         loginConfirm.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                started = true;
+                controller.setServerStatus(true);
                 statusArea.setText("Starting server...");
                 statusArea.setVisible(true);
                 revalidate();
@@ -52,7 +43,7 @@ public class Server extends JFrame {
         send.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                started = false;
+                controller.setServerStatus(false);
                 statusArea.setText("Stopping server...");
                 revalidate();
                 repaint();
@@ -69,31 +60,15 @@ public class Server extends JFrame {
         setVisible(true);
     }
 
-    public void addUserMessage(UserMessage userMessage) {
-        backup.backup(userMessage.toString());
-        userMessages.add(userMessage);
-        printMessages(userMessage.toString());
+
+    public void setServerController(ServerController serverController) {
+        this.controller = serverController;
+    }
+
+    @Override
+    public void addMessage(String message) {
+        messageArea.append(message);
         revalidate();
         repaint();
-    }
-
-    public ArrayList<UserMessage> getUserMessages() {
-        return userMessages;
-    }
-
-    public boolean isStarted() {
-        return started;
-    }
-
-    public String getIP() {
-        return IP;
-    }
-
-    public int getPort() {
-        return PORT;
-    }
-
-    public void printMessages(String message) {
-        messageArea.append(message);
     }
 }

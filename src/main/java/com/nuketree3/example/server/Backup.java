@@ -5,11 +5,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class Backup {
+public class Backup implements FIleWriteable{
 
     private final String filename;
 
-    public void backup(String message) {
+    @Override
+    public void doBackup(String message) {
 
         try (FileWriter fw = new FileWriter(filename, true);
              BufferedWriter bw = new BufferedWriter(fw);

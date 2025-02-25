@@ -1,6 +1,5 @@
 package com.nuketree3.example.client;
 
-import com.nuketree3.example.server.Server;
 import com.nuketree3.example.server.UserMessage;
 
 import javax.swing.*;
@@ -8,16 +7,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class Client extends JFrame {
+public class ClientGUI extends JFrame implements ClientView{
 
-    private final Server server;
+    private ClientController clientController;
 
     private static final int WIDTH = 800;
     private static final int HEIGHT = 600;
 
-    private boolean isLogin = false;
-
-    private String username = "";
 
     private JTextField ipField;
     private JTextField portField;
@@ -33,10 +29,11 @@ public class Client extends JFrame {
 
     private JTextArea messageArea;
 
-    public Client(Server server) {
-        this.server = server;
+    public ClientGUI(ClientController clientController) {
 
-        setTitle("Client");
+        this.clientController = clientController;
+
+        setTitle("ClientGUI");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(WIDTH, HEIGHT);
         setLocationRelativeTo(null);
@@ -59,20 +56,10 @@ public class Client extends JFrame {
 
         updateVisibility();
 
+
         Thread t1 = new Thread(new Runnable() {
             public void run() {
-                while (isLogin) {
-                    if(server.isStarted()){
-                        StringBuilder stringBuilder = new StringBuilder();
-                        for (UserMessage userMessage : server.getUserMessages()){
-                            stringBuilder.append(userMessage.toString());
-                        }
-                        messageArea.setText(stringBuilder.toString());
-                    }
-                    else {
-                        messageArea.setText("Проблема подключения к серверу");
-                    }
-                }
+                showMessage();
             }
         });
 
@@ -81,10 +68,9 @@ public class Client extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e){
                 try {
-                    if(server.isStarted() && checkConnection(server, ipField.getText(), Integer.parseInt(portField.getText()))){
-                        isLogin = true;
-                        System.out.println("Login");
-                        username = usernameField.getText();
+                    if(clientController.getServerStatus() && clientController.checkConnection(ipField.getText(), Integer.parseInt(portField.getText()))){
+                        clientController.setLoginStatus(true);
+                        clientController.setUsername(usernameField.getText());
                         messageArea.setText("");
                         t1.start();
                     }
@@ -100,19 +86,19 @@ public class Client extends JFrame {
 
             }
         });
-        loginConfirmButton.setVisible(!isLogin);
+        loginConfirmButton.setVisible(!clientController.isLogin());
 
 
         sendButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(server.isStarted()){
-                    server.addUserMessage(new UserMessage(username, messageField.getText()));
+                if(clientController.getServerStatus()){
+                    clientController.sendMessage(messageField.getText());
                     messageField.setText("");
                 }
             }
         });
-        sendButton.setVisible(isLogin);
+        sendButton.setVisible(clientController.isLogin());
 
         settingsPanel.add(ipField);
         settingsPanel.add(portField);
@@ -127,22 +113,28 @@ public class Client extends JFrame {
         add(BorderLayout.SOUTH, messagePanel);
         add(BorderLayout.NORTH, settingsPanel);
 
+
         setVisible(true);
     }
 
-    public boolean checkConnection(Server server, String ip, int port) {
-        return server.getIP().equals(ip) && server.getPort() == port;
-    }
+
 
     public void updateVisibility(){
-        ipField.setVisible(!isLogin);
-        portField.setVisible(!isLogin);
-        usernameField.setVisible(!isLogin);
-        passwordField.setVisible(!isLogin);
-        messageField.setVisible(isLogin);
-        sendButton.setVisible(isLogin);
-        loginConfirmButton.setVisible(!isLogin);
+        ipField.setVisible(!clientController.isLogin());
+        portField.setVisible(!clientController.isLogin());
+        usernameField.setVisible(!clientController.isLogin());
+        passwordField.setVisible(!clientController.isLogin());
+        messageField.setVisible(clientController.isLogin());
+        sendButton.setVisible(clientController.isLogin());
+        loginConfirmButton.setVisible(!clientController.isLogin());
         revalidate();
         repaint();
+    }
+
+    @Override
+    public void showMessage() {
+        while (clientController.isLogin()) {
+            messageArea.setText(clientController.treadToListener());
+        }
     }
 }
